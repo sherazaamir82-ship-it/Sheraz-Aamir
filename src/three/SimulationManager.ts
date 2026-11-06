@@ -11,7 +11,7 @@ export interface SimulationParams {
 
 export class SimulationManager {
   private particlesGroup: THREE.Group;
-  private particleCount: number = 600;
+  private particleCount: number = 850;
   private particlePositions: Float32Array;
   private particleProgress: Float32Array;
   private particlePoints: THREE.Points;
@@ -33,8 +33,12 @@ export class SimulationManager {
   private elevatorBuckets: THREE.Mesh[] = [];
   private loader: ArticulatedLoader | null = null;
   private truckCascade: THREE.Mesh | null = null;
+  private apronPans: THREE.Mesh[] = [];
+  private preheaterBeltMesh: THREE.Mesh | null = null;
+  private calcinerFlameLight: THREE.PointLight | null = null;
 
   private loaderCycleTime: number = 0; // 0 to 1 loop cycle
+  private totalSimTime: number = 0;
   
   public state: SimState = 'playing';
   public speedMultiplier: number = 1.0;
@@ -46,7 +50,10 @@ export class SimulationManager {
     tailPulley: THREE.Mesh,
     elevatorBuckets: THREE.Mesh[],
     loader?: ArticulatedLoader,
-    truckCascade?: THREE.Mesh
+    truckCascade?: THREE.Mesh,
+    apronPans?: THREE.Mesh[],
+    preheaterBeltMesh?: THREE.Mesh,
+    calcinerFlameLight?: THREE.PointLight
   ) {
     this.mats = mats;
     this.beltMesh = beltMesh;
@@ -55,6 +62,9 @@ export class SimulationManager {
     this.elevatorBuckets = elevatorBuckets;
     this.loader = loader || null;
     this.truckCascade = truckCascade || null;
+    this.apronPans = apronPans || [];
+    this.preheaterBeltMesh = preheaterBeltMesh || null;
+    this.calcinerFlameLight = calcinerFlameLight || null;
 
     this.particlesGroup = new THREE.Group();
     this.particlesGroup.name = 'rice_husk_simulation_particles';
@@ -306,8 +316,26 @@ export class SimulationManager {
     }
     this.truckOffloadPoints.geometry.attributes.position.needsUpdate = true;
 
-    // 7. Animate Main Process Stream Particles (Hopper -> Belt -> Elevator -> Downstream)
-    const pathSpeed = 0.045 * effectiveDelta;
+    // 7. Animate Apron Feeder interlocking pans slow advance
+    if (this.apronPans.length > 0) {
+      const panSpeed = effectiveDelta * 0.35;
+      this.apronPans.forEach((pan) => {
+        pan.position.x += panSpeed;
+        if (pan.position.x > 5.18) {
+          pan.position.x = 0.5 + (pan.position.x - 5.18);
+        }
+      });
+    }
+
+    // 8. Animate Calciner flame flicker
+    this.totalSimTime += effectiveDelta;
+    if (this.calcinerFlameLight) {
+      this.calcinerFlameLight.intensity =
+        3.2 + Math.sin(this.totalSimTime * 9.0) * 0.7 + Math.sin(this.totalSimTime * 23.0) * 0.35;
+    }
+
+    // 9. Animate Main Process Stream Particles (Full 7-Stage Cement Plant Flow)
+    const pathSpeed = 0.042 * effectiveDelta;
     for (let i = 0; i < this.particleCount; i++) {
       this.particleProgress[i] = (this.particleProgress[i] + pathSpeed) % 1.0;
     }
@@ -321,42 +349,64 @@ export class SimulationManager {
     for (let i = 0; i < this.particleCount; i++) {
       const t = this.particleProgress[i];
       const i3 = i * 3;
+      const seedZ = ((i * 17) % 100) / 100 - 0.5;
+      const seedX = ((i * 31) % 10) / 10 - 0.5;
 
-      if (t < 0.15) {
-        // Hopper gravity drop through neck
-        const s = t / 0.15;
-        const spread = (1.0 - s) * 0.8;
-        const seed = (i % 10) / 10 - 0.5;
-        pos[i3] = 0 + seed * spread;
-        pos[i3 + 1] = 6.2 - s * 4.6;
-        pos[i3 + 2] = (seed * 1.5) * spread;
-      } else if (t < 0.50) {
-        // Inclined belt conveyor (from x=0.2 to x=19.6)
-        const s = (t - 0.15) / 0.35;
-        const seedZ = ((i * 17) % 100) / 100 - 0.5;
+      if (t < 0.08) {
+        // Stage 1: Primary Hopper gravity drop through throat into feeder boot
+        const s = t / 0.08;
+        const spread = (1.0 - s) * 0.7;
+        pos[i3] = 0 + seedX * spread;
+        pos[i3 + 1] = 6.2 - s * 4.7;
+        pos[i3 + 2] = seedZ * spread;
+      } else if (t < 0.32) {
+        // Stage 2: Inclined Covered Belt Conveyor (411-BC01) travel
+        const s = (t - 0.08) / 0.24;
         pos[i3] = 0.2 + s * 19.4;
-        pos[i3 + 1] = 1.4 + s * 4.5 + Math.sin(s * Math.PI * 8) * 0.02;
-        pos[i3 + 2] = seedZ * 0.45;
-      } else if (t < 0.58) {
-        // Chute tumble into elevator boot
-        const s = (t - 0.50) / 0.08;
-        const seedX = ((i * 31) % 10) / 10 - 0.5;
-        pos[i3] = 19.6 + s * 1.4 + seedX * 0.2;
+        pos[i3 + 1] = 1.45 + s * 4.45 + Math.sin(s * Math.PI * 8) * 0.015;
+        pos[i3 + 2] = seedZ * 0.42;
+      } else if (t < 0.37) {
+        // Conveyor discharge chute tumble into Bucket Elevator Boot
+        const s = (t - 0.32) / 0.05;
+        pos[i3] = 19.6 + s * 1.4;
         pos[i3 + 1] = 5.9 - s * 3.5;
-        pos[i3 + 2] = ((i % 5) - 2) * 0.1;
-      } else if (t < 0.88) {
-        // Elevator vertical lift
-        const s = (t - 0.58) / 0.30;
-        const seedX = ((i * 13) % 10) / 10 - 0.5;
-        pos[i3] = 21.0 + seedX * 0.15;
+        pos[i3 + 2] = ((i % 5) - 2) * 0.08;
+      } else if (t < 0.60) {
+        // Stage 3: Vertical Bucket Elevator (411-BE01) lift up to +28m
+        const s = (t - 0.37) / 0.23;
+        pos[i3] = 21.0 + seedX * 0.12;
         pos[i3 + 1] = 2.4 + s * 24.8;
-        pos[i3 + 2] = -0.42 + ((i % 4) - 2) * 0.08;
+        pos[i3 + 2] = -0.42 + ((i % 4) - 2) * 0.06;
+      } else if (t < 0.65) {
+        // Elevator Head discharge chute arc dropping onto Apron Feeder intake
+        const s = (t - 0.60) / 0.05;
+        pos[i3] = 21.1 + s * 1.7;
+        pos[i3 + 1] = 27.2 - s * 1.6 - Math.pow(s, 2) * 0.4;
+        pos[i3 + 2] = seedZ * 0.25;
+      } else if (t < 0.76) {
+        // Stage 4: Apron Feeder (411-AF01) horizontal metered conveying
+        const s = (t - 0.65) / 0.11;
+        pos[i3] = 22.8 + s * 4.6; // x: 22.8 -> 27.4
+        pos[i3 + 1] = 25.6 + Math.sin(s * 18) * 0.015;
+        pos[i3 + 2] = seedZ * 0.45;
+      } else if (t < 0.80) {
+        // Apron Feeder discharge drop into Preheater Conveyor loading skirt
+        const s = (t - 0.76) / 0.04;
+        pos[i3] = 27.4 + s * 0.5;
+        pos[i3 + 1] = 25.6 - s * 1.5;
+        pos[i3 + 2] = seedZ * 0.2;
+      } else if (t < 0.94) {
+        // Stage 5: Preheater Gallery Belt Conveyor (411-BC02) bridge transport
+        const s = (t - 0.80) / 0.14;
+        pos[i3] = 27.9 + s * 13.6; // x: 27.9 -> 41.5
+        pos[i3 + 1] = 24.1 + Math.sin(s * Math.PI * 6) * 0.01;
+        pos[i3 + 2] = seedZ * 0.38;
       } else {
-        // Discharge into downstream
-        const s = (t - 0.88) / 0.12;
-        pos[i3] = 21.2 + s * 4.2;
-        pos[i3 + 1] = 27.2 - s * 2.8 - Math.pow(s, 2) * 1.2;
-        pos[i3 + 2] = ((i * 7) % 10 - 5) * 0.08;
+        // Stage 6: Preheater Calciner (411-PH01) injection & 900°C combustion fireball
+        const s = (t - 0.94) / 0.06;
+        pos[i3] = 41.5 + s * 2.5;
+        pos[i3 + 1] = 24.1 - s * 4.2 - Math.pow(s, 2) * 1.5;
+        pos[i3 + 2] = Math.sin(s * 12 + i) * 0.4 * s;
       }
     }
 

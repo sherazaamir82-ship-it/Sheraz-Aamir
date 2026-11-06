@@ -3,10 +3,10 @@ export type EquipmentId =
   | 'feeding_hopper'
   | 'belt_conveyor'
   | 'bucket_elevator'
-  | 'downstream_unconfirmed'
-  | 'downstream_surge_bin'
-  | 'downstream_rotary_valve'
-  | 'downstream_screw_conveyor';
+  | 'apron_feeder'
+  | 'preheater_conveyor'
+  | 'preheater_calciner'
+  | 'downstream_unconfirmed';
 
 export type StageConfirmationStatus = 'CONFIRMED' | 'UNCONFIRMED_MODULAR' | 'SITE_VERIFICATION_REQUIRED';
 
@@ -71,7 +71,22 @@ export interface EquipmentSpec {
   cameraPosition: [number, number, number];
 }
 
-export type ViewPreset = 'orbit' | 'top' | 'front' | 'side' | 'isometric' | 'hopper' | 'offloading' | 'conveyor' | 'elevator' | 'downstream';
+export type ViewPreset = 
+  | 'orbit' 
+  | 'top' 
+  | 'front' 
+  | 'side' 
+  | 'isometric' 
+  | 'hopper' 
+  | 'offloading' 
+  | 'conveyor' 
+  | 'elevator' 
+  | 'apron_feeder' 
+  | 'preheater_conveyor' 
+  | 'preheater' 
+  | 'downstream'
+  | 'drone_fpv'
+  | 'drone_chase';
 
 export type DisplayMode = 'solid' | 'cutaway' | 'transparent';
 
@@ -85,3 +100,22 @@ export interface DownstreamOption {
   recommendedApplication: string;
   isConfirmed: boolean;
 }
+
+export type DroneFlightMode = 'patrol' | 'manual' | 'docked' | 'inspect_target';
+export type DroneVisionMode = 'rgb' | 'thermal' | 'night_vision';
+
+export interface DroneTelemetry {
+  altitude: number;
+  speed: number;
+  battery: number;
+  heading: number;
+  pitch: number;
+  roll: number;
+  flightMode: DroneFlightMode;
+  visionMode: DroneVisionMode;
+  lockedHazardId: string | null;
+  targetName: string | null;
+  temperatureReading?: number;
+  dustReading?: number;
+}
+

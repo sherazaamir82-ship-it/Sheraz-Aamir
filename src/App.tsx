@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PlantViewer } from './three/PlantViewer';
 import { HeaderNav } from './components/HeaderNav';
 import { LeftSidebar } from './components/LeftSidebar';
@@ -15,12 +15,17 @@ import { VideoReferenceModal } from './components/VideoReferenceModal';
 import { ProcessTourModal } from './components/ProcessTourModal';
 import { ControlsHelpModal } from './components/ControlsHelpModal';
 import { ProcessFlowDiagram } from './components/ProcessFlowDiagram';
+import { DroneHUD } from './components/DroneHUD';
+import { DroneController, DRONE_PATROL_WAYPOINTS } from './three/DroneController';
 import {
   EquipmentId,
   ViewPreset,
   DisplayMode,
   AppTab,
   HazardItem,
+  DroneFlightMode,
+  DroneVisionMode,
+  DroneTelemetry,
 } from './types/plant';
 import { SimState } from './three/SimulationManager';
 
@@ -44,6 +49,26 @@ export default function App() {
 
   // HSE 3D Warning Markers Toggle
   const [showHseMode, setShowHseMode] = useState<boolean>(true);
+
+  // Drone Flight Inspection State
+  const [isDroneModeActive, setIsDroneModeActive] = useState<boolean>(false);
+  const [droneFlightMode, setDroneFlightMode] = useState<DroneFlightMode>('patrol');
+  const [droneVisionMode, setDroneVisionMode] = useState<DroneVisionMode>('rgb');
+  const [droneTelemetry, setDroneTelemetry] = useState<DroneTelemetry>({
+    altitude: 12.0,
+    speed: 0.0,
+    battery: 96,
+    heading: 85,
+    pitch: 0,
+    roll: 0,
+    flightMode: 'patrol',
+    visionMode: 'rgb',
+    lockedHazardId: null,
+    targetName: null,
+    temperatureReading: 34,
+    dustReading: 50,
+  });
+  const droneControllerRef = useRef<DroneController | null>(null);
 
   // Active Downstream Modular Configuration
   const [activeDownstreamConfig, setActiveDownstreamConfig] =
@@ -85,9 +110,12 @@ export default function App() {
     // Look up equipment containing this hazard
     if (hazard.id.includes('YD')) setSelectedEquipmentId('yard_stockpile');
     else if (hazard.id.includes('HP')) setSelectedEquipmentId('feeding_hopper');
+    else if (hazard.id.includes('AF')) setSelectedEquipmentId('apron_feeder');
+    else if (hazard.id.includes('PH')) setSelectedEquipmentId('preheater_calciner');
+    else if (hazard.location.toLowerCase().includes('preheater') || hazard.id.includes('BC-02')) setSelectedEquipmentId('preheater_conveyor');
     else if (hazard.id.includes('BC')) setSelectedEquipmentId('belt_conveyor');
     else if (hazard.id.includes('BE')) setSelectedEquipmentId('bucket_elevator');
-    else setSelectedEquipmentId('downstream_unconfirmed');
+    else setSelectedEquipmentId('apron_feeder');
 
     setShowHseMode(true);
   };
@@ -115,6 +143,13 @@ export default function App() {
         onToggleSimulation={() =>
           setSimulationState((prev) => (prev === 'playing' ? 'paused' : 'playing'))
         }
+        isDroneModeActive={isDroneModeActive}
+        onToggleDroneMode={() => {
+          const next = !isDroneModeActive;
+          setIsDroneModeActive(next);
+          if (next) setViewPreset('drone_chase');
+          else setViewPreset('orbit');
+        }}
       />
 
       {/* Main Content Workspace */}
@@ -131,63 +166,102 @@ export default function App() {
         {/* 3D WebGL Canvas Viewport */}
         <main className="relative flex-1 h-full overflow-hidden bg-slate-950">
           {/* Quick Fly-To Stage Focus Bar */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-slate-900/90 border border-slate-750 px-2.5 py-1 rounded-full shadow-xl backdrop-blur-sm select-none">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-slate-900/90 border border-slate-750 px-2.5 py-1 rounded-full shadow-xl backdrop-blur-sm select-none max-w-[95vw] overflow-x-auto scrollbar-none">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">
               Fly To:
             </span>
-            <button
-              onClick={() => {
-                setSelectedEquipmentId('feeding_hopper');
-                setViewPreset('hopper');
-              }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
-                selectedEquipmentId === 'feeding_hopper' && viewPreset === 'hopper'
-                  ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
-                  : 'text-amber-300 hover:bg-slate-800'
-              }`}
-              title="Focus camera on CAT loader climbing ramp and dumping into the hopper grizzly"
-            >
-              <span>📥 Loader Feeding Hopper</span>
-            </button>
             <button
               onClick={() => {
                 setSelectedEquipmentId('yard_stockpile');
                 setViewPreset('offloading');
               }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                 selectedEquipmentId === 'yard_stockpile' && viewPreset === 'offloading'
                   ? 'bg-yellow-500 text-slate-950 shadow-md font-bold'
                   : 'text-yellow-300 hover:bg-slate-800'
               }`}
               title="Focus camera on Bedford truck offloading rice husk into storage bay"
             >
-              <span>🚛 Truck Offloading</span>
+              <span>🚛 Offloading Bay</span>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedEquipmentId('feeding_hopper');
+                setViewPreset('hopper');
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                selectedEquipmentId === 'feeding_hopper' && viewPreset === 'hopper'
+                  ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
+                  : 'text-amber-300 hover:bg-slate-800'
+              }`}
+              title="Focus camera on CAT loader climbing ramp and dumping into the hopper grizzly"
+            >
+              <span>📥 Feeding Hopper</span>
             </button>
             <button
               onClick={() => {
                 setSelectedEquipmentId('belt_conveyor');
                 setViewPreset('conveyor');
               }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                 selectedEquipmentId === 'belt_conveyor' && viewPreset === 'conveyor'
                   ? 'bg-emerald-500 text-slate-950 shadow-md font-bold'
                   : 'text-emerald-300 hover:bg-slate-800'
               }`}
             >
-              <span>⚙️ Conveyor</span>
+              <span>⚙️ Conveyor 1</span>
             </button>
             <button
               onClick={() => {
                 setSelectedEquipmentId('bucket_elevator');
                 setViewPreset('elevator');
               }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                 selectedEquipmentId === 'bucket_elevator' && viewPreset === 'elevator'
                   ? 'bg-cyan-500 text-slate-950 shadow-md font-bold'
                   : 'text-cyan-300 hover:bg-slate-800'
               }`}
             >
-              <span>🏗️ Elevator</span>
+              <span>🏗️ Bucket Elevator</span>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedEquipmentId('apron_feeder');
+                setViewPreset('apron_feeder');
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                selectedEquipmentId === 'apron_feeder' && viewPreset === 'apron_feeder'
+                  ? 'bg-sky-500 text-slate-950 shadow-md font-bold'
+                  : 'text-sky-300 hover:bg-slate-800'
+              }`}
+            >
+              <span>🔗 Apron Feeder</span>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedEquipmentId('preheater_conveyor');
+                setViewPreset('preheater_conveyor');
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                selectedEquipmentId === 'preheater_conveyor' && viewPreset === 'preheater_conveyor'
+                  ? 'bg-green-500 text-slate-950 shadow-md font-bold'
+                  : 'text-green-300 hover:bg-slate-800'
+              }`}
+            >
+              <span>⚙️ Preheater Conveyor</span>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedEquipmentId('preheater_calciner');
+                setViewPreset('preheater');
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                selectedEquipmentId === 'preheater_calciner' && viewPreset === 'preheater'
+                  ? 'bg-orange-500 text-slate-950 shadow-md font-bold'
+                  : 'text-orange-300 hover:bg-slate-800'
+              }`}
+            >
+              <span>🔥 Preheater Calciner</span>
             </button>
           </div>
 
@@ -202,7 +276,50 @@ export default function App() {
             showHseMode={showHseMode}
             onSelectHazard={handleSelectHazard}
             isTourActive={isTourActive}
+            isDroneModeActive={isDroneModeActive}
+            droneFlightMode={droneFlightMode}
+            droneVisionMode={droneVisionMode}
+            onDroneTelemetry={setDroneTelemetry}
+            droneRefInstance={droneControllerRef}
           />
+
+          {/* Drone Pilot Cockpit HUD Overlay when Drone Mode is Active */}
+          {isDroneModeActive && (
+            <DroneHUD
+              telemetry={droneTelemetry}
+              onSetFlightMode={setDroneFlightMode}
+              onSetVisionMode={setDroneVisionMode}
+              onFlyToWaypoint={(idx) => droneControllerRef.current?.flyToWaypoint(idx)}
+              onManualInput={(key, val) => {
+                if (droneControllerRef.current) {
+                  droneControllerRef.current.manualInputs[key] = val;
+                }
+              }}
+              onOpenHazardDetail={(hazardId) => {
+                const found = DRONE_PATROL_WAYPOINTS.find((w) => w.hazardId === hazardId);
+                if (found) {
+                  handleSelectHazard({
+                    id: found.hazardId,
+                    name: found.hazardName,
+                    category: found.hazardCategory as any,
+                    riskLevel: found.riskLevel,
+                    location: found.stageName,
+                    status: 'CONFIRMED_IN_FOOTAGE',
+                    whyExists: found.description,
+                    consequences: 'Critical deflagration, mechanical damage, or personnel injury.',
+                    engineeringControls: ['Continuous automated sensor monitoring', 'Interlocked shutdown failsafe'],
+                    administrativeControls: ['OSHA/NFPA standard inspections', 'Daily maintenance audits'],
+                    requiredPPE: ['Flame-retardant coveralls', 'P2 dust respirator', 'High-temp gloves'],
+                    correctiveActions: ['Install physical containment guards', 'Audit maintenance intervals'],
+                  });
+                }
+              }}
+              onCloseDroneMode={() => {
+                setIsDroneModeActive(false);
+                setViewPreset('orbit');
+              }}
+            />
+          )}
 
           {/* Process Flow Diagram Overlay (when Process Flow tab is active) */}
           {activeTab === 'process_flow' && (
@@ -286,6 +403,12 @@ export default function App() {
           }}
           initialTimestamp={videoTimestamp}
           onSync3DToEquipment={handleSelectEquipment}
+          onDeployDroneToHazard={(hazardId) => {
+            setShowVideoModal(false);
+            setIsDroneModeActive(true);
+            setViewPreset('drone_chase');
+            droneControllerRef.current?.flyToHazard(hazardId);
+          }}
         />
       )}
 

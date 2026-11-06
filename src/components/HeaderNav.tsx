@@ -24,6 +24,8 @@ interface HeaderNavProps {
   onOpenVideoModal: () => void;
   simulationPlaying: boolean;
   onToggleSimulation: () => void;
+  isDroneModeActive: boolean;
+  onToggleDroneMode: () => void;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
@@ -36,6 +38,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onOpenVideoModal,
   simulationPlaying,
   onToggleSimulation,
+  isDroneModeActive,
+  onToggleDroneMode,
 }) => {
   return (
     <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-30 select-none shadow-md">
@@ -124,6 +128,20 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
       {/* Quick Action Utility Buttons */}
       <div className="flex items-center gap-2">
+        {/* Drone Inspection UAV Mode Toggle */}
+        <button
+          onClick={onToggleDroneMode}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-md ${
+            isDroneModeActive
+              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-400 ring-2 ring-cyan-400/50'
+              : 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40 hover:bg-cyan-900/80'
+          }`}
+          title="Toggle Autonomous UAV Inspection Drone Flight & FPV Pilot HUD"
+        >
+          <span>🚁 Drone Inspection</span>
+          {isDroneModeActive && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>}
+        </button>
+
         {/* Plant Video Reference Button */}
         <button
           onClick={onOpenVideoModal}

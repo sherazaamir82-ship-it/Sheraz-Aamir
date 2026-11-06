@@ -1301,3 +1301,529 @@ export function buildCementPlantBackground(mats: MaterialLibrary): THREE.Group {
 
   return group;
 }
+
+// 7. Stage 4: Heavy-Duty Apron Feeder (411-AF01)
+export interface ApronFeederData {
+  group: THREE.Group;
+  pans: THREE.Mesh[];
+  driveSprocket: THREE.Mesh;
+  tailSprocket: THREE.Mesh;
+}
+
+export function buildApronFeeder(mats: MaterialLibrary): ApronFeederData {
+  const group = new THREE.Group();
+  group.name = 'apron_feeder';
+  // Positioned directly below elevator discharge: world x=22.2, y=24.8, z=0
+  group.position.set(22.2, 24.8, 0);
+
+  // Main chassis longitudinal C-channels (length 5.6m)
+  const chassisMat = mats.industrialSteel;
+  const leftBeam = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.35, 0.12), chassisMat);
+  leftBeam.position.set(2.8, 0.6, -0.65);
+  leftBeam.castShadow = true;
+  group.add(leftBeam);
+
+  const rightBeam = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.35, 0.12), chassisMat);
+  rightBeam.position.set(2.8, 0.6, 0.65);
+  rightBeam.castShadow = true;
+  group.add(rightBeam);
+
+  // Cross braces every 1.1m
+  for (let bx = 0.6; bx <= 5.2; bx += 1.1) {
+    const cross = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 1.2), chassisMat);
+    cross.position.set(bx, 0.45, 0);
+    group.add(cross);
+  }
+
+  // Supporting legs down to top structural platform
+  for (let lx of [0.8, 2.8, 4.8]) {
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.2, 0.12), chassisMat);
+    legL.position.set(lx, -0.2, -0.65);
+    group.add(legL);
+
+    const legR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.2, 0.12), chassisMat);
+    legR.position.set(lx, -0.2, 0.65);
+    group.add(legR);
+  }
+
+  // Intake Loading Skirt / Hopper underneath elevator discharge (x=0.5)
+  const intakeSkirt = new THREE.Group();
+  intakeSkirt.position.set(0.6, 1.35, 0);
+
+  const skirtBox = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 1.2), mats.paintedSteelSlate);
+  skirtBox.castShadow = true;
+  intakeSkirt.add(skirtBox);
+
+  // Yellow wear plate brackets
+  const wPlateL = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.2, 0.04), mats.safetyYellow);
+  wPlateL.position.set(0, -0.3, 0.61);
+  intakeSkirt.add(wPlateL);
+
+  const wPlateR = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.2, 0.04), mats.safetyYellow);
+  wPlateR.position.set(0, -0.3, -0.61);
+  intakeSkirt.add(wPlateR);
+
+  group.add(intakeSkirt);
+
+  // Side Stationary Skirt Boards along feeder length
+  const skirtWallL = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.45, 0.04), mats.paintedSteelSlate);
+  skirtWallL.position.set(2.8, 1.05, -0.58);
+  skirtWallL.castShadow = true;
+  group.add(skirtWallL);
+
+  const skirtWallR = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.45, 0.04), mats.paintedSteelSlate);
+  skirtWallR.position.set(2.8, 1.05, 0.58);
+  skirtWallR.castShadow = true;
+  group.add(skirtWallR);
+
+  // Sprockets: Tail Sprocket at x=0.5, Head Drive Sprocket at x=5.1
+  const sprocketMat = mats.industrialSteel;
+  const tailSprocketGeom = new THREE.CylinderGeometry(0.38, 0.38, 0.9, 16);
+  tailSprocketGeom.rotateX(Math.PI / 2);
+  const tailSprocket = new THREE.Mesh(tailSprocketGeom, sprocketMat);
+  tailSprocket.position.set(0.5, 0.75, 0);
+  tailSprocket.castShadow = true;
+  group.add(tailSprocket);
+
+  // Tension take-up screw brackets on tail shaft
+  const takeupL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.2, 0.15), mats.safetyYellow);
+  takeupL.position.set(0.5, 0.75, -0.75);
+  group.add(takeupL);
+
+  const takeupR = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.2, 0.15), mats.safetyYellow);
+  takeupR.position.set(0.5, 0.75, 0.75);
+  group.add(takeupR);
+
+  const headSprocketGeom = new THREE.CylinderGeometry(0.42, 0.42, 0.9, 16);
+  headSprocketGeom.rotateX(Math.PI / 2);
+  const driveSprocket = new THREE.Mesh(headSprocketGeom, mats.paintedSteelSlate);
+  driveSprocket.position.set(5.1, 0.75, 0);
+  driveSprocket.castShadow = true;
+  group.add(driveSprocket);
+
+  // Drive Station: 15 kW Motor + Bevel-Helical Gearbox + Torque Arm
+  const driveStation = new THREE.Group();
+  driveStation.position.set(5.1, 0.75, 0.9);
+
+  const gearbox = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.7, 0.5), mats.paintedSteelSlate);
+  gearbox.castShadow = true;
+  driveStation.add(gearbox);
+
+  const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.75, 16), mats.motorBlue);
+  motor.rotation.x = Math.PI / 2;
+  motor.position.set(0, 0, 0.55);
+  motor.castShadow = true;
+  driveStation.add(motor);
+
+  const torqueArm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.65, 0.08), mats.safetyYellow);
+  torqueArm.position.set(0, -0.45, 0);
+  driveStation.add(torqueArm);
+
+  group.add(driveStation);
+
+  // Overlapping Cast-Steel Apron Pans (Continuous carrying strand)
+  const pans: THREE.Mesh[] = [];
+  const panGeom = new THREE.BoxGeometry(0.26, 0.08, 1.05);
+  const panMat = mats.industrialSteel;
+
+  const numPans = 18;
+  for (let p = 0; p < numPans; p++) {
+    const panMesh = new THREE.Mesh(panGeom, panMat);
+    const px = 0.5 + p * 0.26;
+    panMesh.position.set(px, 0.8, 0);
+    panMesh.castShadow = true;
+
+    // Cleat on each pan
+    const cleat = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 1.0), mats.paintedSteelSlate);
+    cleat.position.set(-0.1, 0.05, 0);
+    panMesh.add(cleat);
+
+    // Rice husk bed carried on top of pan
+    const huskBed = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.92), mats.riceHuskMaterial);
+    huskBed.position.set(0, 0.06, 0);
+    panMesh.add(huskBed);
+
+    group.add(panMesh);
+    pans.push(panMesh);
+  }
+
+  // Discharge Chute at Head dropping onto Preheater Conveyor
+  const dischargeChute = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 0.9), mats.paintedSteelSlate);
+  dischargeChute.position.set(5.5, 0.1, 0);
+  dischargeChute.rotation.z = -0.45;
+  dischargeChute.castShadow = true;
+  group.add(dischargeChute);
+
+  // Safety Pull Cord along operator side
+  const pullWire = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 5.2), mats.safetyRed);
+  pullWire.rotation.z = Math.PI / 2;
+  pullWire.position.set(2.8, 1.35, 0.75);
+  group.add(pullWire);
+
+  // 3D Callout Signboard
+  const callout = createCalloutBadge('APRON FEEDER', '411-AF01', '#38BDF8');
+  callout.position.set(2.8, 2.6, 0);
+  group.add(callout);
+
+  return {
+    group,
+    pans,
+    driveSprocket,
+    tailSprocket
+  };
+}
+
+// 8. Stage 5: Preheater Gallery Belt Conveyor (411-BC02)
+export interface PreheaterConveyorData {
+  group: THREE.Group;
+  beltMesh: THREE.Mesh;
+  drivePulley: THREE.Mesh;
+  tailPulley: THREE.Mesh;
+  hoods: THREE.Group[];
+}
+
+export function buildPreheaterConveyor(mats: MaterialLibrary): PreheaterConveyorData {
+  const group = new THREE.Group();
+  group.name = 'preheater_conveyor';
+  // Positioned from Apron Feeder discharge to Preheater Tower: world x=27.2, y=23.6, z=0
+  group.position.set(27.2, 23.6, 0);
+
+  const length = 14.5;
+  const hoods: THREE.Group[] = [];
+
+  // Bridge Gallery Truss Structure
+  const galleryTruss = new THREE.Group();
+  galleryTruss.name = 'gallery_truss';
+
+  const beamMat = mats.industrialSteel;
+  const botStringerL = new THREE.Mesh(new THREE.BoxGeometry(length, 0.2, 0.1), beamMat);
+  botStringerL.position.set(length / 2, 0, -0.65);
+  botStringerL.castShadow = true;
+  galleryTruss.add(botStringerL);
+
+  const botStringerR = new THREE.Mesh(new THREE.BoxGeometry(length, 0.2, 0.1), beamMat);
+  botStringerR.position.set(length / 2, 0, 0.65);
+  botStringerR.castShadow = true;
+  galleryTruss.add(botStringerR);
+
+  // Top roof stringers
+  const topStringerL = new THREE.Mesh(new THREE.BoxGeometry(length, 0.15, 0.1), beamMat);
+  topStringerL.position.set(length / 2, 2.0, -0.65);
+  galleryTruss.add(topStringerL);
+
+  const topStringerR = new THREE.Mesh(new THREE.BoxGeometry(length, 0.15, 0.1), beamMat);
+  topStringerR.position.set(length / 2, 2.0, 0.65);
+  galleryTruss.add(topStringerR);
+
+  // Vertical and diagonal truss struts every 2.4m
+  for (let gx = 0; gx <= length; gx += 2.4) {
+    const postL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.0, 0.1), beamMat);
+    postL.position.set(gx, 1.0, -0.65);
+    galleryTruss.add(postL);
+
+    const postR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.0, 0.1), beamMat);
+    postR.position.set(gx, 1.0, 0.65);
+    galleryTruss.add(postR);
+
+    // Cross beam top and bottom
+    const crossTop = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1.3), beamMat);
+    crossTop.position.set(gx, 2.0, 0);
+    galleryTruss.add(crossTop);
+
+    const crossBot = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1.3), beamMat);
+    crossBot.position.set(gx, 0, 0);
+    galleryTruss.add(crossBot);
+
+    // Diagonal strut
+    if (gx + 2.4 <= length) {
+      const diagL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.1), beamMat);
+      diagL.rotation.z = Math.atan2(2.0, 2.4);
+      diagL.position.set(gx + 1.2, 1.0, -0.65);
+      galleryTruss.add(diagL);
+
+      const diagR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.1), beamMat);
+      diagR.rotation.z = Math.atan2(2.0, 2.4);
+      diagR.position.set(gx + 1.2, 1.0, 0.65);
+      galleryTruss.add(diagR);
+    }
+  }
+
+  // Inspection Walkway along +Z side
+  const walkway = new THREE.Mesh(new THREE.BoxGeometry(length, 0.06, 0.8), mats.steelGrating);
+  walkway.position.set(length / 2, 0.05, 1.15);
+  walkway.receiveShadow = true;
+  galleryTruss.add(walkway);
+
+  // Yellow Handrails along walkway
+  const railMat = mats.safetyYellow;
+  const topRail = new THREE.Mesh(new THREE.BoxGeometry(length, 0.05, 0.05), railMat);
+  topRail.position.set(length / 2, 1.15, 1.55);
+  galleryTruss.add(topRail);
+
+  const midRail = new THREE.Mesh(new THREE.BoxGeometry(length, 0.04, 0.04), railMat);
+  midRail.position.set(length / 2, 0.6, 1.55);
+  galleryTruss.add(midRail);
+
+  const toeBoard = new THREE.Mesh(new THREE.BoxGeometry(length, 0.15, 0.02), mats.hazardStripes);
+  toeBoard.position.set(length / 2, 0.1, 1.55);
+  galleryTruss.add(toeBoard);
+
+  for (let sx = 0.5; sx < length; sx += 1.5) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.15, 0.05), railMat);
+    post.position.set(sx, 0.6, 1.55);
+    galleryTruss.add(post);
+  }
+
+  // Tail Pulley at x=0.4, Head Drive Pulley at x=length-0.5
+  const tailPulleyGeom = new THREE.CylinderGeometry(0.28, 0.28, 0.9, 20);
+  tailPulleyGeom.rotateX(Math.PI / 2);
+  const tailPulley = new THREE.Mesh(tailPulleyGeom, mats.industrialSteel);
+  tailPulley.position.set(0.5, 0.45, 0);
+  tailPulley.castShadow = true;
+  galleryTruss.add(tailPulley);
+
+  const headPulleyGeom = new THREE.CylinderGeometry(0.35, 0.35, 0.9, 20);
+  headPulleyGeom.rotateX(Math.PI / 2);
+  const drivePulley = new THREE.Mesh(headPulleyGeom, mats.paintedSteelSlate);
+  drivePulley.position.set(length - 0.5, 0.45, 0);
+  drivePulley.castShadow = true;
+  galleryTruss.add(drivePulley);
+
+  // Drive motor (18.5 kW) and helical gearbox at head
+  const driveStation = new THREE.Group();
+  driveStation.position.set(length - 0.5, 0.45, 0.85);
+
+  const gearbox = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.65, 0.5), mats.paintedSteelSlate);
+  driveStation.add(gearbox);
+
+  const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.8, 16), mats.motorBlue);
+  motor.rotation.x = Math.PI / 2;
+  motor.position.set(0, 0, 0.55);
+  driveStation.add(motor);
+
+  galleryTruss.add(driveStation);
+
+  // Idlers along conveyor
+  const idlerMat = mats.industrialSteel;
+  for (let ix = 1.2; ix < length - 1.0; ix += 1.2) {
+    const idler = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.75, 12), idlerMat);
+    idler.rotation.x = Math.PI / 2;
+    idler.position.set(ix, 0.42, 0);
+    galleryTruss.add(idler);
+
+    const retIdler = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.75, 12), idlerMat);
+    retIdler.rotation.x = Math.PI / 2;
+    retIdler.position.set(ix, 0.15, 0);
+    galleryTruss.add(retIdler);
+  }
+
+  // Conveyor Rubber Belt Mesh
+  const beltLength = length - 1.0;
+  const beltGeom = new THREE.PlaneGeometry(beltLength, 0.75, 24, 2);
+  beltGeom.rotateX(-Math.PI / 2);
+  beltGeom.rotateY(Math.PI / 2);
+  const beltMesh = new THREE.Mesh(beltGeom, mats.rubberBelt);
+  beltMesh.position.set(length / 2, 0.46, 0);
+  beltMesh.castShadow = true;
+  galleryTruss.add(beltMesh);
+
+  // Corrugated Dust Hood Enclosures (modular arched sections)
+  const numHoods = 8;
+  const hoodLen = (length - 1.2) / numHoods;
+  for (let h = 0; h < numHoods; h++) {
+    const hoodGroup = new THREE.Group();
+    hoodGroup.name = `preheater_conveyor_hood_${h + 1}`;
+    const hx = 0.8 + h * hoodLen + hoodLen / 2;
+
+    const hoodArch = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.5, hoodLen - 0.04, 16, 1, false, 0, Math.PI),
+      mats.corrugatedSteel
+    );
+    hoodArch.rotation.z = Math.PI / 2;
+    hoodArch.rotation.y = -Math.PI / 2;
+    hoodArch.position.set(0, 0.55, 0);
+    hoodArch.castShadow = true;
+    hoodGroup.add(hoodArch);
+
+    // Inspection latch handle
+    const latch = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.06), mats.safetyYellow);
+    latch.position.set(0, 1.05, 0.35);
+    hoodGroup.add(latch);
+
+    hoodGroup.position.set(hx, 0, 0);
+    galleryTruss.add(hoodGroup);
+    hoods.push(hoodGroup);
+  }
+
+  // Tail Loading Skirt Box under Apron Feeder Discharge
+  const tailSkirt = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.9), mats.paintedSteelSlate);
+  tailSkirt.position.set(0.6, 0.9, 0);
+  tailSkirt.castShadow = true;
+  galleryTruss.add(tailSkirt);
+
+  // Head Discharge Hood Enclosure
+  const headHood = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 1.0), mats.paintedSteelSlate);
+  headHood.position.set(length - 0.4, 0.5, 0);
+  headHood.castShadow = true;
+  galleryTruss.add(headHood);
+
+  // Emergency Pull Cord along walkway
+  const pullCord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, length), mats.safetyRed);
+  pullCord.rotation.z = Math.PI / 2;
+  pullCord.position.set(length / 2, 0.9, 0.72);
+  galleryTruss.add(pullCord);
+
+  group.add(galleryTruss);
+
+  // 3D Callout Signboard
+  const callout = createCalloutBadge('PREHEATER BELT CONVEYOR', '411-BC02', '#4ADE80');
+  callout.position.set(length / 2, 3.2, 0);
+  group.add(callout);
+
+  return {
+    group,
+    beltMesh,
+    drivePulley,
+    tailPulley,
+    hoods
+  };
+}
+
+// 9. Stage 6: Preheater Calciner & Fuel Injection Interface (411-PH01)
+export interface PreheaterCalcinerData {
+  group: THREE.Group;
+  flameLight: THREE.PointLight;
+  calcinerVessel: THREE.Group;
+}
+
+export function buildPreheaterCalcinerInterface(mats: MaterialLibrary): PreheaterCalcinerData {
+  const group = new THREE.Group();
+  group.name = 'preheater_calciner';
+  // Positioned at the Preheater Tower injection port: world x=41.5, y=0, z=0
+  group.position.set(41.5, 0, 0);
+
+  // Calciner Vessel Cylinder (part of preheater tower)
+  const calcinerVessel = new THREE.Group();
+  calcinerVessel.position.set(2.5, 14.0, 0);
+
+  // Main calciner combustion chamber vessel
+  const vesselBody = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 16.0, 32), mats.paintedSteelSlate);
+  vesselBody.position.y = 8.0;
+  vesselBody.castShadow = true;
+  calcinerVessel.add(vesselBody);
+
+  // Conical transition bottom
+  const vesselCone = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 1.2, 4.0, 32), mats.paintedSteelSlate);
+  vesselCone.position.y = -2.0;
+  calcinerVessel.add(vesselCone);
+
+  // Stiffener expansion rings
+  for (let ry of [2, 6, 10, 14]) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.65, 0.08, 8, 32), mats.industrialSteel);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = ry;
+    calcinerVessel.add(ring);
+  }
+
+  // Refractory inspection sight glass with fiery amber combustion interior
+  const sightPort = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.4, 16), mats.industrialSteel);
+  sightPort.rotation.z = Math.PI / 2;
+  sightPort.position.set(-2.6, 10.0, 0);
+  calcinerVessel.add(sightPort);
+
+  const sightGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.04, 16), mats.cutawayGlass);
+  sightGlass.rotation.z = Math.PI / 2;
+  sightGlass.position.set(-2.8, 10.0, 0);
+  calcinerVessel.add(sightGlass);
+
+  // Internal glowing fireball PointLight
+  const flameLight = new THREE.PointLight(0xff7700, 3.5, 14);
+  flameLight.position.set(-0.5, 10.0, 0);
+  calcinerVessel.add(flameLight);
+
+  // Tertiary Air Duct connection (supplying 800°C combustion air)
+  const tad = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 9.0, 20), mats.paintedSteelSlate);
+  tad.rotation.z = 0.6;
+  tad.position.set(3.8, 3.5, 1.8);
+  calcinerVessel.add(tad);
+
+  group.add(calcinerVessel);
+
+  // Fuel Injection Transition System from Preheater Conveyor Discharge Head (y ≈ 24.1)
+  const injectionSystem = new THREE.Group();
+  injectionSystem.position.set(0.2, 23.6, 0);
+
+  // Slanted upper gravity feed chute
+  const chuteUpper = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.6, 0.7), mats.paintedSteelSlate);
+  chuteUpper.rotation.z = -0.4;
+  chuteUpper.position.set(0.6, -0.6, 0);
+  chuteUpper.castShadow = true;
+  injectionSystem.add(chuteUpper);
+
+  // Emergency Pneumatic Knife Gate Valve (Safety Red with pneumatic piston)
+  const knifeGate = new THREE.Group();
+  knifeGate.position.set(1.1, -1.5, 0);
+
+  const gateBody = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.3, 0.85), mats.safetyRed);
+  knifeGate.add(gateBody);
+
+  const airCylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.7, 16), mats.industrialSteel);
+  airCylinder.rotation.x = Math.PI / 2;
+  airCylinder.position.set(0, 0, 0.55);
+  knifeGate.add(airCylinder);
+
+  const airSolenoid = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), mats.safetyYellow);
+  airSolenoid.position.set(0.15, 0, 0.6);
+  knifeGate.add(airSolenoid);
+
+  injectionSystem.add(knifeGate);
+
+  // Double Flap / Rotary Airlock Valve (structural teal) to seal against 900°C backpressure
+  const airlockValve = new THREE.Group();
+  airlockValve.position.set(1.3, -2.3, 0);
+
+  const valveBody = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.8, 20), mats.structuralTeal);
+  valveBody.rotation.x = Math.PI / 2;
+  airlockValve.add(valveBody);
+
+  const valveMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.5, 16), mats.motorBlue);
+  valveMotor.position.set(0, 0, 0.6);
+  valveMotor.rotation.x = Math.PI / 2;
+  airlockValve.add(valveMotor);
+
+  // Counterweight arm for pendulum flap
+  const cwArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), mats.safetyYellow);
+  cwArm.position.set(-0.35, -0.2, -0.48);
+  airlockValve.add(cwArm);
+
+  const cwWeight = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.2, 16), mats.industrialSteel);
+  cwWeight.position.set(-0.35, -0.45, -0.48);
+  airlockValve.add(cwWeight);
+
+  injectionSystem.add(airlockValve);
+
+  // Water-Cooled Stainless Steel Injection Burner Pipe penetrating calciner vessel
+  const burnerPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 2.2, 20), mats.industrialSteel);
+  burnerPipe.rotation.z = -Math.PI / 2 + 0.3;
+  burnerPipe.position.set(2.2, -3.2, 0);
+  burnerPipe.castShadow = true;
+  injectionSystem.add(burnerPipe);
+
+  // Nitrogen Purge Snuffing Connection lines (safety yellow)
+  const n2Pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2), mats.safetyYellow);
+  n2Pipe.position.set(1.6, -2.8, 0.3);
+  injectionSystem.add(n2Pipe);
+
+  group.add(injectionSystem);
+
+  // 3D Callout Signboard
+  const callout = createCalloutBadge('PREHEATER CALCINER', '411-PH01', '#F97316');
+  callout.position.set(1.5, 27.5, 0);
+  group.add(callout);
+
+  return {
+    group,
+    flameLight,
+    calcinerVessel
+  };
+}

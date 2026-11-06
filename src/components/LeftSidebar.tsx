@@ -41,6 +41,12 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
         return <ArrowUpRight className="w-4 h-4 text-emerald-400" />;
       case 'bucket_elevator':
         return <TrendingUp className="w-4 h-4 text-cyan-400" />;
+      case 'apron_feeder':
+        return <ArrowUpRight className="w-4 h-4 text-sky-400" />;
+      case 'preheater_conveyor':
+        return <ArrowUpRight className="w-4 h-4 text-green-400" />;
+      case 'preheater_calciner':
+        return <Flame className="w-4 h-4 text-orange-500" />;
       default:
         return <HelpCircle className="w-4 h-4 text-rose-400" />;
     }
@@ -69,7 +75,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
               Plant Equipment Stages
             </span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-cyan-400 border border-slate-700">
-              5 Stages
+              {PROCESS_STAGES_FLOW.length} Stages (Confirmed)
             </span>
           </div>
           <p className="text-[11px] text-slate-400 mt-1 leading-snug">

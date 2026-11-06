@@ -10,9 +10,22 @@ import {
   buildBucketElevator,
   buildDownstreamModularStage,
   buildCementPlantBackground,
+  buildApronFeeder,
+  buildPreheaterConveyor,
+  buildPreheaterCalcinerInterface,
 } from './proceduralModels';
+import { buildInspectionDrone } from './droneModel';
+import { DroneController } from './DroneController';
 import { SimulationManager, SimState } from './SimulationManager';
-import { EquipmentId, ViewPreset, DisplayMode, HazardItem } from '../types/plant';
+import {
+  EquipmentId,
+  ViewPreset,
+  DisplayMode,
+  HazardItem,
+  DroneFlightMode,
+  DroneVisionMode,
+  DroneTelemetry,
+} from '../types/plant';
 import { EQUIPMENT_DATABASE } from '../data/plantData';
 
 interface PlantViewerProps {
@@ -26,6 +39,11 @@ interface PlantViewerProps {
   showHseMode: boolean;
   onSelectHazard?: (hazard: HazardItem) => void;
   isTourActive?: boolean;
+  isDroneModeActive?: boolean;
+  droneFlightMode?: DroneFlightMode;
+  droneVisionMode?: DroneVisionMode;
+  onDroneTelemetry?: (telemetry: DroneTelemetry) => void;
+  droneRefInstance?: React.MutableRefObject<DroneController | null>;
 }
 
 export const PlantViewer: React.FC<PlantViewerProps> = ({
@@ -39,6 +57,11 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
   showHseMode,
   onSelectHazard,
   isTourActive,
+  isDroneModeActive = false,
+  droneFlightMode = 'patrol',
+  droneVisionMode = 'rgb',
+  onDroneTelemetry,
+  droneRefInstance,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const simManagerRef = useRef<SimulationManager | null>(null);
@@ -49,10 +72,12 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
 
   // Modular mesh references
   const hoodsRef = useRef<THREE.Group[]>([]);
+  const preheaterHoodsRef = useRef<THREE.Group[]>([]);
   const elevatorCasingsRef = useRef<THREE.Group[]>([]);
   const downstreamGroupRef = useRef<THREE.Group | null>(null);
   const matsRef = useRef<MaterialLibrary | null>(null);
   const hseMarkersRef = useRef<THREE.Group[]>([]);
+  const droneControllerRef = useRef<DroneController | null>(null);
 
   // Smooth camera target interpolation (Framed to show Offloading, Loader, and Hopper in foreground)
   const targetCamPos = useRef(new THREE.Vector3(-14, 15, 26));
@@ -163,14 +188,21 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
     scene.add(elevatorData.group);
     elevatorCasingsRef.current = elevatorData.casingCovers;
 
-    const downstreamGroup = buildDownstreamModularStage(mats, activeDownstreamConfig);
-    scene.add(downstreamGroup);
-    downstreamGroupRef.current = downstreamGroup;
+    // Confirmed Downstream Stages: Apron Feeder (411-AF01) -> Preheater Conveyor (411-BC02) -> Calciner (411-PH01)
+    const apronData = buildApronFeeder(mats);
+    scene.add(apronData.group);
+
+    const preheaterConveyorData = buildPreheaterConveyor(mats);
+    scene.add(preheaterConveyorData.group);
+    preheaterHoodsRef.current = preheaterConveyorData.hoods;
+
+    const calcinerData = buildPreheaterCalcinerInterface(mats);
+    scene.add(calcinerData.group);
 
     const plantBg = buildCementPlantBackground(mats);
     scene.add(plantBg);
 
-    // Simulation Engine with Articulated Loader & Truck Offloading
+    // Simulation Engine with Articulated Loader, Cascades, Apron Feeder & Fireball Calciner
     const simManager = new SimulationManager(
       mats,
       conveyorData.beltMesh,
@@ -178,7 +210,10 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
       conveyorData.tailPulley,
       elevatorData.buckets,
       yardData.loader,
-      yardData.truckCascade
+      yardData.truckCascade,
+      apronData.pans,
+      preheaterConveyorData.beltMesh,
+      calcinerData.flameLight
     );
     scene.add(simManager.getGroup());
     simManagerRef.current = simManager;
@@ -232,6 +267,16 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
     });
     scene.add(hseGroup);
 
+    // Enterprise Industrial Inspection Drone (UAV-01)
+    const droneData = buildInspectionDrone(mats);
+    scene.add(droneData.group);
+
+    const droneController = new DroneController(droneData, (t) => {
+      if (onDroneTelemetry) onDroneTelemetry(t);
+    });
+    droneControllerRef.current = droneController;
+    if (droneRefInstance) droneRefInstance.current = droneController;
+
     // Animation Loop
     const clock = new THREE.Clock();
     let frameId = 0;
@@ -244,8 +289,41 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
         simManagerRef.current.update(delta);
       }
 
-      // Smooth camera interpolation
-      if (isInterpolatingCam.current && cameraRef.current && controlsRef.current) {
+      // Advance Drone Flight Controller & Sensor Gimbal
+      if (droneControllerRef.current) {
+        droneControllerRef.current.update(delta);
+
+        // If Drone Mode is active, attach camera to drone (chase or FPV view)
+        if (isDroneModeActive && cameraRef.current && controlsRef.current) {
+          const dronePos = droneControllerRef.current.getDronePosition();
+          const droneFwd = droneControllerRef.current.getDroneForward();
+
+          if (viewPreset === 'drone_fpv') {
+            cameraRef.current.position.set(
+              dronePos.x + droneFwd.x * 0.35,
+              dronePos.y - 0.04,
+              dronePos.z + droneFwd.z * 0.35
+            );
+            controlsRef.current.target.set(
+              dronePos.x + droneFwd.x * 14,
+              dronePos.y - 3,
+              dronePos.z + droneFwd.z * 14
+            );
+          } else {
+            // Chase camera: smooth follow 4.8m behind and 2.4m above the drone
+            const chasePos = new THREE.Vector3(
+              dronePos.x - droneFwd.x * 4.8,
+              dronePos.y + 2.4,
+              dronePos.z - droneFwd.z * 4.8
+            );
+            cameraRef.current.position.lerp(chasePos, 0.08);
+            controlsRef.current.target.lerp(dronePos, 0.1);
+          }
+        }
+      }
+
+      // Smooth camera interpolation for standard views (when not in drone mode)
+      if (!isDroneModeActive && isInterpolatingCam.current && cameraRef.current && controlsRef.current) {
         cameraRef.current.position.lerp(targetCamPos.current, 0.075);
         controlsRef.current.target.lerp(targetCamLook.current, 0.075);
 
@@ -382,6 +460,14 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
           }
         });
       });
+      preheaterHoodsRef.current.forEach((hood) => {
+        hood.visible = true;
+        hood.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.material = matsRef.current!.corrugatedSteel;
+          }
+        });
+      });
       elevatorCasingsRef.current.forEach((sec) => {
         sec.visible = true;
         sec.traverse((child) => {
@@ -392,8 +478,15 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
       });
     } else if (displayMode === 'cutaway') {
       // Make conveyor hoods transparent/acrylic and elevator casings transparent
-      hoodsRef.current.forEach((hood, idx) => {
-        // Hide alternate hoods or make transparent to reveal belt and idlers
+      hoodsRef.current.forEach((hood) => {
+        hood.visible = true;
+        hood.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.material = matsRef.current!.cutawayGlass;
+          }
+        });
+      });
+      preheaterHoodsRef.current.forEach((hood) => {
         hood.visible = true;
         hood.traverse((child) => {
           if (child instanceof THREE.Mesh) {
@@ -412,6 +505,14 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
     } else if (displayMode === 'transparent') {
       // X-Ray wireframe ghosted mode
       hoodsRef.current.forEach((hood) => {
+        hood.visible = true;
+        hood.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.material = matsRef.current!.cutawayGhosted;
+          }
+        });
+      });
+      preheaterHoodsRef.current.forEach((hood) => {
         hood.visible = true;
         hood.traverse((child) => {
           if (child instanceof THREE.Mesh) {
@@ -447,6 +548,19 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
       m.visible = showHseMode;
     });
   }, [showHseMode]);
+
+  // 5b. Sync Drone Flight Mode & Vision Mode
+  useEffect(() => {
+    if (droneControllerRef.current) {
+      droneControllerRef.current.setFlightMode(droneFlightMode);
+    }
+  }, [droneFlightMode]);
+
+  useEffect(() => {
+    if (droneControllerRef.current) {
+      droneControllerRef.current.setVisionMode(droneVisionMode);
+    }
+  }, [droneVisionMode]);
 
   // 6. Camera Presets Handling
   useEffect(() => {
@@ -488,6 +602,18 @@ export const PlantViewer: React.FC<PlantViewerProps> = ({
       case 'elevator':
         targetCamPos.current.set(21, 20, 26);
         targetCamLook.current.set(21, 15, 0);
+        break;
+      case 'apron_feeder':
+        targetCamPos.current.set(31, 29, 8);
+        targetCamLook.current.set(25.5, 25.5, 0);
+        break;
+      case 'preheater_conveyor':
+        targetCamPos.current.set(38, 29, 12);
+        targetCamLook.current.set(34, 24.5, 0);
+        break;
+      case 'preheater':
+        targetCamPos.current.set(48, 28, 8);
+        targetCamLook.current.set(42.5, 23.5, 0);
         break;
       case 'downstream':
         targetCamPos.current.set(36, 30, 16);

@@ -164,7 +164,7 @@ export const BottomControlsDock: React.FC<BottomControlsDockProps> = ({
                 viewPreset === 'conveyor' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-medium' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Conveyor
+              Conveyor 1
             </button>
             <button
               onClick={() => onSelectViewPreset('elevator')}
@@ -173,6 +173,30 @@ export const BottomControlsDock: React.FC<BottomControlsDockProps> = ({
               }`}
             >
               Elevator
+            </button>
+            <button
+              onClick={() => onSelectViewPreset('apron_feeder')}
+              className={`px-1.5 py-1 rounded text-xs transition-colors ${
+                viewPreset === 'apron_feeder' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 font-medium' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Apron Feeder
+            </button>
+            <button
+              onClick={() => onSelectViewPreset('preheater_conveyor')}
+              className={`px-1.5 py-1 rounded text-xs transition-colors ${
+                viewPreset === 'preheater_conveyor' ? 'bg-green-500/20 text-green-300 border border-green-500/40 font-medium' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Preheater Conveyor
+            </button>
+            <button
+              onClick={() => onSelectViewPreset('preheater')}
+              className={`px-1.5 py-1 rounded text-xs transition-colors ${
+                viewPreset === 'preheater' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40 font-medium' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Calciner
             </button>
             <button
               onClick={() => onSelectViewPreset('orbit')}

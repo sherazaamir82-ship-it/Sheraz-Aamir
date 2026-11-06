@@ -377,56 +377,247 @@ export const EQUIPMENT_DATABASE: Record<string, EquipmentSpec> = {
   downstream_unconfirmed: {
     id: 'downstream_unconfirmed',
     tag: '411-DS00',
-    name: 'Process Stage To Be Confirmed (Modular Downstream)',
-    stageNumber: 4,
-    stageTitle: 'Stage 4: Downstream Process Stage (Pending Confirmation)',
+    name: 'Modular Downstream Alternatives (Optional)',
+    stageNumber: 7,
+    stageTitle: 'Optional Configurations: Plant Comparison',
     confirmationStatus: 'UNCONFIRMED_MODULAR',
-    purpose: 'Modular placeholder representing the unconfirmed downstream conveying, dosing, and kiln firing equipment. Designed to be dynamically configured as plant verification data is finalized.',
-    workingPrinciple: 'Receives discharged rice husk from the bucket elevator head chute and directs it to the appropriate downstream alternative fuel dosing equipment (e.g., surge bin, loss-in-weight feeder, rotary airlock, pneumatic injection pipe to cement kiln / precalciner burner).',
-    operationMechanism: 'Configurable based on user selection or incoming plant drawings/videos. Can be swapped between Surge Bin + Pin Gate, Rotary Airlock Feeder + Pneumatic Blowing Line, or Screw Conveyor Feeder.',
-    materialEntering: 'Elevated stream of rice husk (approx. 15-20 t/h) from bucket elevator head discharge chute.',
-    materialLeaving: 'Calibrated feed into kiln burner pipe / precalciner firing chamber (hot gas temperature ~850-950°C).',
-    mechanicalFunction: 'Continuous gravimetric or volumetric metering, flame isolation, and pneumatic injection.',
+    purpose: 'Allows evaluating alternative configurations (surge bin, pneumatic blower, screw conveyor).',
+    workingPrinciple: 'Modular staging options comparison.',
+    operationMechanism: 'Configurable handling alternatives.',
+    materialEntering: 'Rice husk from bucket elevator discharge.',
+    materialLeaving: 'Husk routed to kiln calciner.',
+    mechanicalFunction: 'Alternative plant engineering assessment.',
     technicalSpecs: [
-      { label: 'Status', value: 'UNCONFIRMED — User Modular Selection Active' },
-      { label: 'Observed in Video 02:50', value: 'Surge Bin with Pin Gate & Weigh Feeder Belt' },
-      { label: 'Observed in Video 03:25', value: 'Rotary Airlock Valve & Pneumatic Transport Duct' },
-      { label: 'Recommended Action', value: 'Select active configuration or input custom equipment in the Configurator tab' },
+      { label: 'Evaluation Status', value: 'Alternative Options' },
+      { label: 'Options Modeled', value: 'Surge Bin, Rotary Airlock, Screw Conveyor' }
     ],
     components: [
-      { name: 'Transfer Transition Chute', description: 'Abrasion-resistant sloped chute connecting elevator head to downstream equipment.' },
-      { name: 'Modular Equipment Envelope', description: 'Configurable 3D boundary representing the selected downstream system.' },
-      { name: 'Process Flow Direction Indicator', description: 'Visual telemetry arrows showing material destination toward kiln/calciner.' }
+      { name: 'Surge Dosing Bin Option', description: 'Gravimetric weigh feeder with isolating pin gate.' },
+      { name: 'Rotary Airlock Option', description: 'Rotary airlock with Roots blower pneumatic transport.' }
+    ],
+    commonFailureModes: [],
+    maintenanceRequirements: [],
+    hazards: [],
+    cameraTarget: [26, 25, 0],
+    cameraPosition: [36, 30, 16]
+  },
+
+  apron_feeder: {
+    id: 'apron_feeder',
+    tag: '411-AF01',
+    name: 'Heavy-Duty Apron Feeder & Pan Extractor',
+    stageNumber: 4,
+    stageTitle: 'Stage 4: Apron Feeder Pan Extraction & Metering',
+    confirmationStatus: 'CONFIRMED',
+    purpose: 'Receives the continuous vertical discharge of rice husk from the bucket elevator head chute, absorbs material kinetic impact, and provides positive-displacement volumetric extraction onto the secondary preheater conveyor.',
+    workingPrinciple: 'Overlapping deep-dish manganese/carbon steel pans bolted onto twin strands of heavy-duty crawler track chain. Driven by head sprockets via a variable-frequency electric motor and shaft-mounted planetary reducer. Overlapping pan flanges prevent husk leakage while providing uniform flow without bridging under high surge loads.',
+    operationMechanism: 'Slow-speed positive pan translation at 0.05 – 0.20 m/s with variable frequency drive (VFD). Internal dribble cleanout screw captures fine husk dust settling between return pans.',
+    materialEntering: 'High-volume stream of rice husk cascading from bucket elevator head discharge hood at +28m.',
+    materialLeaving: 'Continuous regulated bed of husk dropping through discharge chute onto the preheater belt conveyor.',
+    mechanicalFunction: 'Heavy-duty extraction, impact damping, and controlled volumetric transfer between elevator and high-gallery belt conveyor.',
+    technicalSpecs: [
+      { label: 'Pan Width', value: '1,000 mm overlapping steel slats' },
+      { label: 'Feeder Center Distance', value: '6.5 meters' },
+      { label: 'Pan Speed', value: '0.04 – 0.18 m/s (variable VFD)' },
+      { label: 'Extraction Capacity', value: '25 – 35 tonnes/hour' },
+      { label: 'Drive Unit', value: '15 kW geared motor with planetary reducer' },
+      { label: 'Chain Type', value: 'Sealed-and-lubricated tractor-type crawler track chain' },
+      { label: 'Pan Material', value: 'AR400 / Hardox abrasion-resistant pressed plate' },
+      { label: 'Side Skirting', value: 'Stationary steel skirts with polyurethane wear strips' },
+    ],
+    components: [
+      { name: 'Overlapping Steel Flight Pans', description: 'Formed abrasion-resistant steel pans with interlocking front and rear lips.' },
+      { name: 'Crawler Track Chains', description: 'Twin continuous link chains with hardened alloy steel bushings and pins.' },
+      { name: 'Drive Head Sprockets', description: 'Induction-hardened tooth segments keyed to heavy head driving shaft.' },
+      { name: 'Carrying Roller Track', description: 'Heavy supporting rollers absorbing impact of falling rice husk from elevator.' },
+      { name: 'Planetary Gear Reducer', description: 'High-torque shaft-mounted reducer directly coupled to head shaft.' },
+      { name: 'Hydraulic / Screw Take-Up', description: 'Heavy tensioning slides on tail shaft maintaining chain tension.' },
+      { name: 'Enclosed Dust Containment Hood', description: 'Top hood with extraction port preventing airborne dust dispersion.' },
     ],
     commonFailureModes: [
-      { failure: 'Backflow of Hot Kiln Gas / Flame Blowback', rootCause: 'Airlock seal loss or failure of double flap valve under negative/positive pressure swings.', symptom: 'Chute charring, smoke emitting backwards into elevator head.', action: 'Immediate emergency isolation slide gate closure; nitrogen purging.' }
+      { failure: 'Chain Pitch Elongation / Slack', rootCause: 'Abrasive wear on chain pins and bushings over extended running hours.', symptom: 'Chain sag on return run, sprocket tooth climbing, clattering sound.', action: 'Adjust tail take-up screws evenly; replace worn track chain links if stretch > 2%.' },
+      { failure: 'Pan Flange Deformation / Jamming', rootCause: 'Ingestion of unscalped tramp metal foreign object between overlapping lips.', symptom: 'Feeder drive motor trips on high torque / overload.', action: 'Apply LOTO; clear jammed tramp object; inspect and straighten deformed pan lips.' },
+      { failure: 'Side Skirt Seal Wear / Husk Spillage', rootCause: 'Continuous rubbing of silica-rich rice husk along lower skirt rubber.', symptom: 'Husk accumulation on floor grating beneath feeder frame.', action: 'Adjust skirt rubber clamp bolts to 3mm clearance; vacuum accumulated dust.' }
     ],
     maintenanceRequirements: [
-      { task: 'Modular Equipment Verification', frequency: 'As Plant Data Arrives', procedure: 'Update plant equipment tag, mechanical drawings, and OEM specs.' }
+      { task: 'Chain Tension & Sprocket Tooth Inspection', frequency: 'Weekly', procedure: 'Check chain sag on return strand (maximum 50mm); inspect drive sprocket tooth profile for hook wear.' },
+      { task: 'Track Roller & Head Bearing Greasing', frequency: 'Bi-Weekly', procedure: 'Lubricate spherical roller bearings with high-temperature lithium EP2 grease.' },
+      { task: 'Pan Fastener Torque Verification', frequency: 'Monthly', procedure: 'Check torque on M16 high-tensile pan attachment bolts to 190 Nm.' }
     ],
     hazards: [
       {
-        id: 'HAZ-DS-01',
-        name: 'Kiln Hot Gas & Flame Blowback into Fuel Line',
-        category: 'FIRE_EXPLOSION',
-        location: 'Downstream Injection Interface to Precalciner',
-        status: 'POTENTIAL_SITE_VERIFY',
+        id: 'HAZ-AF-01',
+        name: 'In-Running Pinch & Shear Points at Feeder Sprockets and Pans',
+        category: 'MECHANICAL',
+        location: 'Apron Feeder Head Sprockets and Tail Return Wheel',
+        status: 'CONFIRMED_IN_FOOTAGE',
         riskLevel: 'CRITICAL',
-        whyExists: 'Precalciner operates under slight draft or pressure fluctuations with temperatures exceeding 850°C; failure of airlock allows ignition of incoming husk.',
-        consequences: 'Catastrophic fire propagating backwards through conveying line to elevator head.',
-        engineeringControls: ['Heavy-duty rotary airlock with sacrificial replaceable tips', 'Pneumatic emergency shut-off knife gate', 'Continuous pressure differential interlock'],
-        administrativeControls: ['Automatic trip sequence: trip fuel feed if kiln pressure differential drops'],
-        requiredPPE: ['Heat-resistant aluminized clothing during kiln area maintenance'],
-        correctiveActions: ['Install fast-acting flame detection sensor interlocked with high-pressure nitrogen snuffing valve'],
-        position3D: [26, 26, 0]
+        whyExists: 'Slow-moving heavy steel pans and rotating sprockets develop enormous torque with zero give.',
+        consequences: 'Severe crushing or traumatic amputation of hands or feet.',
+        engineeringControls: ['Complete perimeter mesh guards extending 1.2m around drive and tail', 'Keyed interlock switches on inspection access doors', 'Emergency stop pull-cable along feeder length'],
+        administrativeControls: ['Strict Zero Energy State Lockout (LOTO) prior to any maintenance', 'Never reach under skirts while drive is energized'],
+        requiredPPE: ['Snug-fit flame-retardant coveralls', 'Heavy-duty leather gloves (when isolated)', 'Safety boots'],
+        correctiveActions: ['Install captive-screw yellow expanded metal nip guards'],
+        position3D: [25.5, 27.5, 0]
+      },
+      {
+        id: 'HAZ-AF-02',
+        name: 'Combustible Dust Accumulation in Feeder Basin',
+        category: 'FIRE_EXPLOSION',
+        location: 'Underneath Apron Feeder Return Strand',
+        status: 'CONFIRMED_IN_FOOTAGE',
+        riskLevel: 'HIGH',
+        whyExists: 'Fine rice husk particulates sift through pan gaps and settle in deep dead zones.',
+        consequences: 'Smoldering fire beneath pans; deflagration if disturbed into dust cloud.',
+        engineeringControls: ['Continuous bottom dribble collection screw conveyor', 'Dust extraction duct connected to central baghouse'],
+        administrativeControls: ['Weekly vacuum cleaning of interior chassis pan floor'],
+        requiredPPE: ['P2/N95 dust respirator', 'Anti-static coveralls'],
+        correctiveActions: ['Install optical infrared spark detector above discharge transition chute'],
+        position3D: [26.0, 26.2, 0]
       }
     ],
     videoTimestamp: {
       start: 170,
-      description: 'Upper platforms, surge bin, pin gate, and rotary airlock valve'
+      description: 'Upper preheater platform feeder staging area'
     },
-    cameraTarget: [26, 25, 0],
-    cameraPosition: [36, 30, 16]
+    cameraTarget: [25.5, 26.5, 0],
+    cameraPosition: [33, 31, 8]
+  },
+
+  preheater_conveyor: {
+    id: 'preheater_conveyor',
+    tag: '411-BC02',
+    name: 'Preheater Feeding Belt Conveyor & High Gallery',
+    stageNumber: 5,
+    stageTitle: 'Stage 5: High Gallery Preheater Feeding Belt Conveyor',
+    confirmationStatus: 'CONFIRMED',
+    purpose: 'Transports the metered rice husk from the apron feeder discharge chute across the elevated preheater structural gallery directly to the preheater calciner injection chute.',
+    workingPrinciple: 'Continuous troughed belt conveyor enclosed inside a dust-tight weather gallery structure. Operates horizontally and slightly inclined, delivering steady mass-flow of fuel into the precalciner feed chute.',
+    operationMechanism: 'Continuous rubber belt conveying at 1.4 m/s. Fitted with zero-speed switches, conveyor belt misalignment switches, and emergency pull cord.',
+    materialEntering: 'Continuous regulated stream of rice husk from Apron Feeder discharge chute.',
+    materialLeaving: 'Continuous stream tumbling off head pulley into preheater calciner injection transition chute.',
+    mechanicalFunction: 'High-elevation horizontal transfer across structural gallery into the calciner combustion chamber.',
+    technicalSpecs: [
+      { label: 'Belt Width', value: '800 mm EP400 3-ply rubber' },
+      { label: 'Conveyor Length', value: '14.5 meters' },
+      { label: 'Elevation Level', value: '+28.0m Preheater Tower Gallery' },
+      { label: 'Belt Speed', value: '1.4 m/s' },
+      { label: 'Drive Motor', value: '18.5 kW, 4-pole, IP55, Ex-rated' },
+      { label: 'Troughing Idlers', value: '35° 3-roll troughing sets' },
+      { label: 'Enclosure', value: 'Dust-tight corrugated hoods with quick-release clamps' },
+      { label: 'Safety Devices', value: 'Zero-speed sensor, belt drift switches, pull-wire emergency stop' },
+    ],
+    components: [
+      { name: 'Corrugated Dust Gallery Enclosure', description: 'Fully enclosed gallery hood preventing high-altitude winds from blowing away loose husk.' },
+      { name: 'Head Drive Pulley & Motor', description: 'Rubber-lagged driving drum, 18.5 kW motor, and helical gearbox.' },
+      { name: 'Troughing Idlers (35°)', description: 'Three equal rollers supporting carry strand.' },
+      { name: 'Return Flat Rollers', description: 'Rubber-disc return rollers preventing husk cake buildup.' },
+      { name: 'Emergency Pull-Wire Cable', description: 'Safety trip wire running entire walkway length.' },
+      { name: 'Chute Plug Detector', description: 'Tilt level switch detecting material backup at calciner chute.' }
+    ],
+    commonFailureModes: [
+      { failure: 'Belt Misalignment on Elevated Gallery', rootCause: 'Wind force or uneven loading from Apron Feeder discharge.', symptom: 'Belt edge rubs against stringer; belt sway switch trips conveyor.', action: 'Re-align loading skirt; center material impact using deflectors.' },
+      { failure: 'Discharge Chute Plug at Preheater Inlet', rootCause: 'Calciner backpressure or double flap valve sticking.', symptom: 'Material piles up on head pulley; chute plug sensor trips system.', action: 'Immediately trip upstream apron feeder and elevator; clear calciner inlet flap.' }
+    ],
+    maintenanceRequirements: [
+      { task: 'Belt Cleaner & Scraper Blade Check', frequency: 'Daily', procedure: 'Inspect polyurethane primary scraper for clean wipe without material carryback.' },
+      { task: 'Gallery Walkway Sweeping', frequency: 'Weekly', procedure: 'Sweep loose husk spillage away from gallery conveyor stringers and emergency pull wires.' }
+    ],
+    hazards: [
+      {
+        id: 'HAZ-BC2-01',
+        name: 'Gallery Fire Propagation to Precalciner',
+        category: 'FIRE_EXPLOSION',
+        location: 'Conveyor Deck at Preheater Boundary',
+        status: 'CONFIRMED_IN_FOOTAGE',
+        riskLevel: 'CRITICAL',
+        whyExists: 'High-temperature gas from calciner can ignite belt rubber if isolation valves fail.',
+        consequences: 'Conveyor gallery fire propagating backwards into apron feeder and elevator head.',
+        engineeringControls: ['Pneumatic fast-acting guillotine emergency shut-off gate', 'High-pressure water deluge spray nozzles along head section', 'Thermocouple heat detection cable inside gallery'],
+        administrativeControls: ['Automatic trip sequence: trip conveyor if chute temperature exceeds 120°C'],
+        requiredPPE: ['Flame-retardant PPE', 'Safety helmet', 'Full-face escape hood'],
+        correctiveActions: ['Install redundant double-flap airlock valve with mechanical interlock'],
+        position3D: [33, 27, 0]
+      }
+    ],
+    videoTimestamp: {
+      start: 185,
+      description: 'Upper gallery conveyor bridge leading into preheater tower'
+    },
+    cameraTarget: [33, 27, 0],
+    cameraPosition: [42, 33, 10]
+  },
+
+  preheater_calciner: {
+    id: 'preheater_calciner',
+    tag: '411-PH01',
+    name: 'Cement Preheater Tower & Calciner Combustion Chamber',
+    stageNumber: 6,
+    stageTitle: 'Stage 6: Preheater Calciner Direct Injection & Co-Processing',
+    confirmationStatus: 'CONFIRMED',
+    purpose: 'Receives the continuous stream of rice husk alternative fuel from the secondary conveyor chute and injects it into the turbulent high-temperature calciner combustion zone ($850^\circ\text{C} – 920^\circ\text{C}$), replacing fossil coal and decarbonizing clinker calcination.',
+    workingPrinciple: 'Discharged husk passes through an airtight sealing mechanism (double flap gate / rotary airlock valve) into the calciner injection duct. The high-velocity, oxygen-rich tertiary air stream from the clinker cooler suspends the rice husk particles. Volatile hydrocarbons flash ignite within milliseconds, delivering intense heat to decarbonate raw meal ($CaCO_3 \to CaO + CO_2$). The resulting silica-rich rice husk ash is chemically incorporated into the cement clinker without solid waste generation.',
+    operationMechanism: 'Continuous pneumatic/gravity suspension firing under negative draft pressure (-15 to -25 mmWC) with thermal substitution rate controlled by plant automation (DCS).',
+    materialEntering: 'Stream of rice husk (calorific value ~3,200 kcal/kg, moisture < 10%) from Preheater Conveyor chute.',
+    materialLeaving: 'Complete thermal combustion into flue gas ($CO_2, H_2O$) and hot silica ash assimilated into cement clinker mineral matrix.',
+    mechanicalFunction: 'Thermal energy conversion, high-temperature combustion suspension, and clinker mineral co-processing.',
+    technicalSpecs: [
+      { label: 'Calciner Operating Temp', value: '860°C – 920°C' },
+      { label: 'Gas Suspension Velocity', value: '18 – 24 m/s turbulent flow' },
+      { label: 'Draft Pressure', value: '-15 to -25 mmWC (induced draft)' },
+      { label: 'Thermal Replacement Rate', value: '15% – 25% coal substitution' },
+      { label: 'Airlock Sealing', value: 'Motorized rotary airlock valve with Stellite tips' },
+      { label: 'Flame Safety System', value: 'Fast-closing pneumatic knife gate (< 0.8 sec trip)' },
+      { label: 'Ash Utilization', value: '100% incorporated into cement clinker (SiO2 source)' },
+    ],
+    components: [
+      { name: 'Calciner Injection Transition Chute', description: 'Refractory-lined sloping steel chute connecting conveyor head to calciner shell.' },
+      { name: 'Double Flap / Rotary Airlock Valve', description: 'Prevents hot kiln gas and flames from blowing back into the fuel conveying system.' },
+      { name: 'Pneumatic Emergency Shut-Off Gate', description: 'Failsafe knife gate snapping shut on power loss or flame detection.' },
+      { name: 'Tertiary Air Duct Connection', description: 'Supplies 800°C preheated combustion air from the clinker cooler.' },
+      { name: 'Preheater Cyclone Stage', description: 'Vortex separation vessel separating hot calcined raw meal from exhaust gases.' },
+      { name: 'Nitrogen Purging Port', description: 'Emergency inert gas purging connection for immediate fire extinguishing.' },
+    ],
+    commonFailureModes: [
+      { failure: 'Hot Gas & Flame Blowback into Fuel Chute', rootCause: 'Negative draft pressure loss or rotary airlock vane seal erosion.', symptom: 'Fuel chute temperature rises above 150°C; smoke issuing from chute inspection port.', action: 'DCS triggers emergency fuel shut-off knife gate; activate nitrogen snuffing line.' },
+      { failure: 'Incomplete Combustion / Carbon Carryover', rootCause: 'Fuel feed rate exceeding available combustion air or husk particle moisture > 15%.', symptom: 'CO gas peak detected at preheater exit; reduction in cyclone temperature.', action: 'Trim apron feeder speed via DCS; adjust tertiary air damper.' }
+    ],
+    maintenanceRequirements: [
+      { task: 'Airlock Vane Clearance & Seal Inspection', frequency: 'Weekly', procedure: 'Measure clearance between rotor tips and housing (maximum 0.3mm); check for wear grooves.' },
+      { task: 'Refractory Lining Thermal Camera Survey', frequency: 'Monthly', procedure: 'Infrared thermography scan of calciner injection neck to detect cracked refractory bricks.' },
+      { task: 'Emergency Knife Gate Stroke Test', frequency: 'Monthly', procedure: 'Initiate pneumatic trip test to verify full closure time is under 800 milliseconds.' }
+    ],
+    hazards: [
+      {
+        id: 'HAZ-PH-01',
+        name: 'High-Temperature Kiln Flame Flashback into Fuel Line',
+        category: 'FIRE_EXPLOSION',
+        location: 'Calciner Injection Port & Feed Transition Neck',
+        status: 'CONFIRMED_IN_FOOTAGE',
+        riskLevel: 'CRITICAL',
+        whyExists: 'Precalciner operates at 900°C with enormous thermal energy; any loss of draft will cause superheated gas to rush up the fuel chute.',
+        consequences: 'Catastrophic fire and explosion propagating backwards through conveyor gallery into elevator head.',
+        engineeringControls: [
+          'High-speed pneumatic knife gate (< 0.8s closing)',
+          'Rotary airlock with continuous differential pressure interlock',
+          'Automated nitrogen purging system at fuel injection point',
+          'Dual redundant infrared pyrometers monitoring chute temperature'
+        ],
+        administrativeControls: [
+          'Automatic feed cut: DCS trips feeder if precalciner draft pressure drops below -5 mmWC',
+          'Hot work permit and gas test mandatory prior to opening calciner inspection ports'
+        ],
+        requiredPPE: ['Aluminized heat-reflective proximity suit', 'Full face heat shield', 'High-temp thermal gloves'],
+        correctiveActions: ['Install fast-acting water mist snuffing nozzles at injection throat'],
+        position3D: [38, 25, -2]
+      }
+    ],
+    videoTimestamp: {
+      start: 205,
+      description: 'Upper calciner platforms, tertiary air duct, and injection ports'
+    },
+    cameraTarget: [38, 25, -2],
+    cameraPosition: [48, 30, 8]
   }
 };
 
@@ -487,23 +678,39 @@ export const PROCESS_STAGES_FLOW = [
     equipmentId: 'belt_conveyor',
     title: 'Inclined Covered Belt Conveying',
     status: 'CONFIRMED',
-    description: 'Belt transports husk up a 14° incline beneath corrugated dust covers. Tramp magnet extracts iron before transfer.',
+    description: 'Primary belt (411-BC01) transports husk up a 14° incline beneath corrugated dust covers. Tramp magnet extracts iron before transfer.',
     highlightColor: '#2A9D8F'
   },
   {
     step: 3,
     equipmentId: 'bucket_elevator',
-    title: 'Vertical Elevation to Preheater Platform (+28m)',
+    title: 'Vertical Elevation to High Platform (+28m)',
     status: 'CONFIRMED',
-    description: 'Enclosed bucket elevator lifts husk vertically inside twin-leg casing. Buckets centrifugally discharge at the head pulley.',
+    description: 'Twin-leg enclosed bucket elevator (411-BE01) lifts husk vertically. Centrifugal discharge throws husk into downstream receiving chute.',
     highlightColor: '#0077B6'
   },
   {
     step: 4,
-    equipmentId: 'downstream_unconfirmed',
-    title: 'Downstream Processing & Kiln Dosing (To Be Confirmed)',
-    status: 'UNCONFIRMED_MODULAR',
-    description: 'Modular staging zone: Pending final plant confirmation. Configurable between surge bin, rotary airlock, or pneumatic injection.',
-    highlightColor: '#E63946'
+    equipmentId: 'apron_feeder',
+    title: 'Heavy-Duty Apron Feeder Dosing (411-AF01)',
+    status: 'CONFIRMED',
+    description: 'Overlapping cast-steel pans receive bucket elevator discharge, regulating and metering bulk husk flow without choking.',
+    highlightColor: '#38BDF8'
+  },
+  {
+    step: 5,
+    equipmentId: 'preheater_conveyor',
+    title: 'Preheater Gallery Belt Conveyor (411-BC02)',
+    status: 'CONFIRMED',
+    description: 'Elevated enclosed gallery conveyor transports metered husk across the high structural bridge directly to the preheater tower.',
+    highlightColor: '#4ADE80'
+  },
+  {
+    step: 6,
+    equipmentId: 'preheater_calciner',
+    title: 'Cement Preheater & Calciner Injection (411-PH01)',
+    status: 'CONFIRMED',
+    description: 'Husk discharges through airtight rotary/flap valves into the calciner injection port where it burns at 900°C for raw meal decarbonation.',
+    highlightColor: '#F97316'
   }
 ];
