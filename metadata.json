@@ -1,0 +1,6 @@
+{
+  "name": "Alternative Fuel (Rice Husk) Handling 3D Plant Simulator",
+  "description": "Interactive 3D industrial digital twin and process simulation of a cement plant Alternative Fuel (Rice Husk) handling system, featuring realistic equipment mechanics, material flow, cutaway inspection, and HSE risk assessment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
